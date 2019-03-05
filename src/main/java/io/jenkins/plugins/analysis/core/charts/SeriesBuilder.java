@@ -3,6 +3,7 @@ package io.jenkins.plugins.analysis.core.charts;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -19,7 +20,6 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.multimap.list.FastListMultimap;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import edu.hm.hafner.util.VisibleForTesting;
@@ -157,7 +157,6 @@ public abstract class SeriesBuilder {
             model.add(label, series.getValue());
         }
         return model;
-
     }
 
     /**
@@ -226,69 +225,44 @@ public abstract class SeriesBuilder {
      *
      * @param configuration
      *         configures the data set (how many results should be process, etc.)
-     * @param histories
-     *         the static analysis results
+     * @param resultsOfJobs
+     *         the static analysis results of a collection of jobs
      * @return the aggregated data set
      */
     public LinesDataSet createAggregation(final ChartModelConfiguration configuration,
-            final Collection<AnalysisHistory> histories) {
+            final Collection<Iterable<? extends StaticAnalysisRun>> resultsOfJobs) {
         Set<LocalDate> availableDates = Sets.newHashSet();
-        Map<AnalysisHistory, Map<LocalDate, Map<String, Integer>>> averagesPerJob = Maps.newHashMap();
-        for (AnalysisHistory history : histories) {
-            Map<LocalDate, Map<String, Integer>> averageByDate = averageByDate(
-                    createSeriesPerBuild(configuration, history));
-            averagesPerJob.put(history, averageByDate);
-            availableDates.addAll(averageByDate.keySet());
-        }
-        return createDataSetPerDay(createTotalsForAllAvailableDates(histories, availableDates, averagesPerJob));
-    }
+        List<Map<LocalDate, Map<String, Integer>>> averagesPerJob = new ArrayList<>();
 
-    /**
-     * Creates the totals for all available dates. If a job has no results for a given day then the previous value is
-     * used.
-     *
-     * @param jobs
-     *         the result actions belonging to the jobs
-     * @param availableDates
-     *         the available dates in all jobs
-     * @param averagesPerJob
-     *         the averages per day, mapped by job
-     *
-     * @return the aggregated values
-     */
-    private SortedMap<LocalDate, Map<String, Integer>> createTotalsForAllAvailableDates(
-            final Collection<AnalysisHistory> jobs,
-            final Set<LocalDate> availableDates,
-            final Map<AnalysisHistory, Map<LocalDate, Map<String, Integer>>> averagesPerJob) {
+        for (Iterable<? extends StaticAnalysisRun> jobResults : resultsOfJobs) {
+            Map<LocalDate, Map<String, Integer>> averageByDate = averageByDate(
+                    createSeriesPerBuild(configuration, jobResults));
+            availableDates.addAll(averageByDate.keySet());
+            averagesPerJob.add(averageByDate);
+        }
+
         List<LocalDate> sortedDates = Lists.newArrayList(availableDates);
         Collections.sort(sortedDates);
 
-        SortedMap<LocalDate, Map<String, Integer>> totals = new TreeMap<>();
-        for (AnalysisHistory jobResult : jobs) {
-            Map<LocalDate, Map<String, Integer>> availableResults = averagesPerJob.get(jobResult);
-            Map<String, Integer> previousResult = new HashMap<>();
-            for (LocalDate buildDate : sortedDates) {
-                totals.putIfAbsent(buildDate, new HashMap<>());
 
-                Map<String, Integer> additionalResult;
-                if (availableResults.containsKey(buildDate)) {
-                    additionalResult = availableResults.get(buildDate);
-                    previousResult = additionalResult;
-                }
-                else {
-                    // reuse previous result if there is no result on the given day
-                    additionalResult = previousResult;
-                }
+        for (Map<LocalDate, Map<String, Integer>> averageByDate : averagesPerJob) {
+            Map<String, Integer> previous = new HashMap<>();
+            for (LocalDate date : sortedDates) {
+                averageByDate.putIfAbsent(date, previous);
 
-                Map<String, Integer> existing = totals.get(buildDate);
-
-                Map<String, Integer> summed = Stream.concat(existing.entrySet().stream(),
-                        additionalResult.entrySet().stream())
-                        .collect(toMap(Entry::getKey, Entry::getValue, Integer::sum));
-
-                totals.put(buildDate, summed);
+                previous = averageByDate.get(date);
             }
         }
-        return totals;
+
+        FastListMultimap<LocalDate, Map<String, Integer>> valuesPerDate = FastListMultimap.newMultimap();
+        for (Map<LocalDate, Map<String, Integer>> averageByDate : averagesPerJob) {
+            for (Entry<LocalDate, Map<String, Integer>> entry : averageByDate.entrySet()) {
+                valuesPerDate.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        SortedMap<LocalDate, Map<String, Integer>> result = createSeriesPerDay(valuesPerDate);
+        return createDataSetPerDay(result);
     }
+
 }

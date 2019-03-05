@@ -96,7 +96,7 @@ public class JobAction implements Action {
         return owner;
     }
 
-    private History createBuildHistory() {
+    public History createBuildHistory() {
         Run<?, ?> lastFinishedRun = owner.getLastCompletedBuild();
         if (lastFinishedRun == null) {
             return new NullAnalysisHistory();

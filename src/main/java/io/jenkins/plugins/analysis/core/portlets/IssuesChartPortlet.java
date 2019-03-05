@@ -15,13 +15,16 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
 import hudson.Extension;
 import hudson.model.Descriptor;
+import hudson.model.Job;
 import hudson.plugins.view.dashboard.DashboardPortlet;
 
-import io.jenkins.plugins.analysis.core.charts.SeverityChart;
-import io.jenkins.plugins.analysis.core.model.History;
-import io.jenkins.plugins.analysis.core.model.NullAnalysisHistory;
+import io.jenkins.plugins.analysis.core.charts.SeverityTrendChart;
+import io.jenkins.plugins.analysis.core.model.JobAction;
 import io.jenkins.plugins.analysis.core.model.ToolSelection;
 import io.jenkins.plugins.analysis.core.util.JenkinsFacade;
+import io.jenkins.plugins.analysis.core.util.StaticAnalysisRun;
+
+import static io.jenkins.plugins.analysis.core.model.ToolSelection.*;
 
 /**
  * A dashboard view portlet that renders a two-dimensional table of issues per type and job.
@@ -34,6 +37,7 @@ public class IssuesChartPortlet extends DashboardPortlet {
     private List<ToolSelection> tools = new ArrayList<>();
 
     private JenkinsFacade jenkinsFacade = new JenkinsFacade();
+    private List<Job<?, ?>> jobs;
 
     /**
      * Creates a new instance of {@link IssuesChartPortlet}.
@@ -115,10 +119,23 @@ public class IssuesChartPortlet extends DashboardPortlet {
     @JavaScriptMethod
     @SuppressWarnings("unused") // Called by jelly view
     public JSONObject getTrend() {
-        SeverityChart severityChart = new SeverityChart();
+        SeverityTrendChart severityChart = new SeverityTrendChart();
 
-        History history = new NullAnalysisHistory();
-        return JSONObject.fromObject(severityChart.create(history));
+        List<Iterable<? extends StaticAnalysisRun>> histories = new ArrayList<>();
+        for (Job<?, ?> job : jobs) {
+            job.getActions(JobAction.class)
+                    .stream()
+                    .filter(createToolFilter(selectTools, tools))
+                    .map(JobAction::createBuildHistory).findFirst().ifPresent(histories::add);
+        }
+
+        return JSONObject.fromObject(severityChart.create(histories));
+    }
+
+    public int getModel(final List<Job<?, ?>> jobs) {
+        this.jobs = jobs;
+
+        return jobs.size();
     }
 
     /**
