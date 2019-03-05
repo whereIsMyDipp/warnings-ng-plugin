@@ -1,6 +1,8 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:dp="/hudson/plugins/view/dashboard" xmlns:st="jelly:stapler">
 
+  <j:set var="model" value="${it.register(jobs)}"/>
+
   <dp:decorate portlet="${it}" width="1">
     <tr>
       <td>
@@ -14,6 +16,7 @@
 
   <script src="${resURL}/plugin/warnings-ng/js/libs/echarts.common.min.js"/>
   <script src="${resURL}/plugin/warnings-ng/js/trend-chart.js"/>
+
   <script>
     var view = <st:bind value="${it}"/>
 

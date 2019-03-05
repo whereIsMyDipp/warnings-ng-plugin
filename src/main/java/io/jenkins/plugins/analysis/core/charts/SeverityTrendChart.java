@@ -1,5 +1,7 @@
 package io.jenkins.plugins.analysis.core.charts;
 
+import java.util.Collection;
+
 import edu.hm.hafner.analysis.Severity;
 
 import io.jenkins.plugins.analysis.core.charts.LineSeries.FilledMode;
@@ -31,6 +33,16 @@ public class SeverityTrendChart implements TrendChart {
                 model.addSeries(series);
             }
         }
+
+        return model;
+    }
+
+    public LinesChartModel create(final Collection<Iterable<? extends StaticAnalysisRun>> results) {
+        SeveritySeriesBuilder builder = new SeveritySeriesBuilder();
+        LinesDataSet dataSet = builder.createAggregation(createConfiguration(), results);
+
+        LinesChartModel model = new LinesChartModel();
+        model.addXAxisLabels(dataSet.getXAxisLabels());
 
         return model;
     }
