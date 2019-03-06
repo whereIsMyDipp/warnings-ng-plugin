@@ -67,7 +67,7 @@ public abstract class SeriesBuilder {
     public LinesDataSet createDataSet(final ChartModelConfiguration configuration,
             final Iterable<? extends StaticAnalysisRun> results) {
         LinesDataSet dataSet;
-        if (configuration.useBuildDateAsDomain()) {
+        if (!configuration.useBuildDateAsDomain()) {
             SortedMap<LocalDate, Map<String, Integer>> averagePerDay = averageByDate(createSeriesPerBuild(configuration, results));
             dataSet = createDataSetPerDay(averagePerDay);
         }
