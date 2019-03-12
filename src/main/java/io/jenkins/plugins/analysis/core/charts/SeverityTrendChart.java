@@ -1,11 +1,14 @@
 package io.jenkins.plugins.analysis.core.charts;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 import edu.hm.hafner.analysis.Severity;
 
 import io.jenkins.plugins.analysis.core.charts.LineSeries.FilledMode;
 import io.jenkins.plugins.analysis.core.charts.LineSeries.StackedMode;
+import io.jenkins.plugins.analysis.core.model.History;
 import io.jenkins.plugins.analysis.core.util.LocalizedSeverity;
 import io.jenkins.plugins.analysis.core.util.StaticAnalysisRun;
 
@@ -38,9 +41,10 @@ public class SeverityTrendChart implements TrendChart {
         return model;
     }
 
-    public LinesChartModel create(final Collection<Iterable<? extends StaticAnalysisRun>> results) {
+    public LinesChartModel create(final Collection<Iterable<? extends StaticAnalysisRun>> results,
+            final ChartModelConfiguration configuration) {
         SeveritySeriesBuilder builder = new SeveritySeriesBuilder();
-        LinesDataSet dataSet = builder.createAggregation(createConfiguration(), results);
+        LinesDataSet dataSet = builder.createAggregation(configuration, results);
 
         LinesChartModel model = new LinesChartModel();
         model.addXAxisLabels(dataSet.getXAxisLabels());

@@ -2,6 +2,7 @@ package io.jenkins.plugins.analysis.core.portlets;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.ObjectUtils;
 
@@ -18,7 +19,10 @@ import hudson.model.Descriptor;
 import hudson.model.Job;
 import hudson.plugins.view.dashboard.DashboardPortlet;
 
+import io.jenkins.plugins.analysis.core.charts.ChartModelConfiguration;
+import io.jenkins.plugins.analysis.core.charts.ChartModelConfiguration.AxisType;
 import io.jenkins.plugins.analysis.core.charts.SeverityTrendChart;
+import io.jenkins.plugins.analysis.core.model.History;
 import io.jenkins.plugins.analysis.core.model.JobAction;
 import io.jenkins.plugins.analysis.core.model.ToolSelection;
 import io.jenkins.plugins.analysis.core.util.JenkinsFacade;
@@ -121,6 +125,16 @@ public class IssuesChartPortlet extends DashboardPortlet {
     public JSONObject getTrend() {
         SeverityTrendChart severityChart = new SeverityTrendChart();
 
+//        List<List<History>> histories = new ArrayList<>();
+//        for (Job<?, ?> job : jobs) {
+//            List<History> historiesOfJob = job.getActions(JobAction.class)
+//                    .stream()
+//                    .filter(createToolFilter(selectTools, tools))
+//                    .map(JobAction::createBuildHistory)
+//                    .collect(Collectors.toList());
+//            histories.add(historiesOfJob);
+//        }
+
         List<Iterable<? extends StaticAnalysisRun>> histories = new ArrayList<>();
         for (Job<?, ?> job : jobs) {
             job.getActions(JobAction.class)
@@ -129,10 +143,21 @@ public class IssuesChartPortlet extends DashboardPortlet {
                     .map(JobAction::createBuildHistory).findFirst().ifPresent(histories::add);
         }
 
-        return JSONObject.fromObject(severityChart.create(histories));
+        return JSONObject.fromObject(severityChart.create(histories, createChartConfiguration(false)));
     }
 
-    public int getModel(final List<Job<?, ?>> jobs) {
+    private ChartModelConfiguration createChartConfiguration(final boolean isBuildOnXAxis) {
+        return new ChartModelConfiguration(isBuildOnXAxis ? AxisType.BUILD : AxisType.DATE);
+    }
+
+    /**
+     * Registers the specified jobs in this portlet. These jobs will be used to render the trend chart.
+     * Note that rendering of the trend chart is done using an Ajax call later on.
+     *
+     * @param jobs the jobs to render
+     * @return the number of jobs
+     */
+    public int register(final List<Job<?, ?>> jobs) {
         this.jobs = jobs;
 
         return jobs.size();
@@ -144,11 +169,11 @@ public class IssuesChartPortlet extends DashboardPortlet {
      * @author Ulli Hafner
      */
     @Extension(optional = true)
-    public static class IssuesTablePortletDescriptor extends Descriptor<DashboardPortlet> {
+    public static class IssuesChartPortletDescriptor extends Descriptor<DashboardPortlet> {
         @NonNull
         @Override
         public String getDisplayName() {
-            return "TODO";
+            return Messages.IssuesChartPortlet_Name();
         }
     }
 }

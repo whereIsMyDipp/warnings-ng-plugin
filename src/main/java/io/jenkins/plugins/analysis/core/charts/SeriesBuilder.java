@@ -220,6 +220,26 @@ public abstract class SeriesBuilder {
         return valuesPerDate;
     }
 
+    public LinesDataSet createAggregation(final ChartModelConfiguration configuration,
+            final List<List<? extends StaticAnalysisRun>> results) {
+        Set<AnalysisBuild> availableBuilds = Sets.newHashSet();
+        Map<String, SortedMap<AnalysisBuild, Map<String, Integer>>> resultsPerTool = new HashMap<>();
+
+        for (Iterable<? extends StaticAnalysisRun> jobResults : results) {
+            SortedMap<AnalysisBuild, Map<String, Integer>> toolSeries
+                    = createSeriesPerBuild(configuration, jobResults);
+            availableBuilds.addAll(toolSeries.keySet());
+//            resultsPerTool.put(id, toolSeries);
+        }
+
+        // TODO: map from tool ID ->
+        // Create results for missing build#
+
+        SortedMap<LocalDate, Map<String, Integer>> result = createSeriesPerDay(null);
+        return createDataSetPerDay(result);
+    }
+
+
     /**
      * Creates an aggregated data set.
      *

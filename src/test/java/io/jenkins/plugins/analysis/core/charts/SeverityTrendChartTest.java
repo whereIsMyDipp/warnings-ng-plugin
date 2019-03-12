@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
  */
 class SeverityTrendChartTest {
     @Test
-    void shouldCreatePriorityChart() {
+    void shouldCreatePriorityChartForJobAndAction() {
         SeverityTrendChart chart = new SeverityTrendChart();
 
         List<StaticAnalysisRun> results = new ArrayList<>();
@@ -44,7 +44,26 @@ class SeverityTrendChartTest {
                 .isArray().hasSize(3);
     }
 
-    private void verifySeries(final LineSeries high, final Severity severity, 
+    @Test
+    void shouldCreatePriorityChartForJobAndMultipleActions() {
+        SeverityTrendChart chart = new SeverityTrendChart();
+
+        List<StaticAnalysisRun> resultsCheckStyle = new ArrayList<>();
+        resultsCheckStyle.add(createResult(1, 2, 3, 1));
+        resultsCheckStyle.add(createResult(2, 4, 6, 2));
+
+        List<StaticAnalysisRun> resultsSpotBugs = new ArrayList<>();
+        resultsSpotBugs.add(createResult(11, 12, 13, 1));
+        resultsSpotBugs.add(createResult(12, 14, 16, 2));
+
+        List<List<? extends StaticAnalysisRun>> jobResults = new ArrayList<>();
+        jobResults.add(resultsCheckStyle);
+        jobResults.add(resultsSpotBugs);
+
+        // FIXME: finish test
+    }
+
+    private void verifySeries(final LineSeries high, final Severity severity,
             final int valueFirstBuild, final int valueSecondBuild) {
         assertThatJson(high).node("name")
                 .isEqualTo(LocalizedSeverity.getLocalizedString(severity));

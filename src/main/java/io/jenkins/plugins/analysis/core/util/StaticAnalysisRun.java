@@ -14,6 +14,13 @@ import hudson.model.Run;
  */
 public interface StaticAnalysisRun {
     /**
+     * Returns the ID of the static analysis result.
+     *
+     * @return the ID
+     */
+    String getId();
+
+    /**
      * Returns the run that created this static analysis result.
      *
      * @return the run
