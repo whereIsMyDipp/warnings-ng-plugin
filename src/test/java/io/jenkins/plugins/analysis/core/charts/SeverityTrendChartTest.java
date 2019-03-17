@@ -16,6 +16,7 @@ import io.jenkins.plugins.analysis.core.util.AnalysisBuild;
 import io.jenkins.plugins.analysis.core.util.LocalizedSeverity;
 import io.jenkins.plugins.analysis.core.util.StaticAnalysisRun;
 
+import static java.util.Arrays.*;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.*;
 import static org.mockito.Mockito.*;
 
@@ -25,6 +26,31 @@ import static org.mockito.Mockito.*;
  * @author Ullrich Hafner
  */
 class SeverityTrendChartTest {
+    @Test
+    void shouldCreatePriorityChartForJobAndMultipleActions() {
+        SeverityTrendChart chart = new SeverityTrendChart();
+
+        List<StaticAnalysisRun> resultsCheckStyle = new ArrayList<>();
+        resultsCheckStyle.add(createResult(1, 2, 3, 1));
+        resultsCheckStyle.add(createResult(2, 4, 6, 2));
+
+        List<StaticAnalysisRun> resultsSpotBugs = new ArrayList<>();
+        resultsSpotBugs.add(createResult(11, 12, 13, 1));
+        resultsSpotBugs.add(createResult(12, 14, 16, 2));
+
+        LinesChartModel model = chart.create(
+                new CompositeResult(asList(resultsCheckStyle, resultsSpotBugs)), new ChartModelConfiguration());
+
+        verifySeries(model.getSeries().get(0), Severity.WARNING_LOW, 16, 22);
+        verifySeries(model.getSeries().get(1), Severity.WARNING_NORMAL, 14, 18);
+        verifySeries(model.getSeries().get(2), Severity.WARNING_HIGH, 12, 14);
+
+        assertThatJson(model).node("xAxisLabels")
+                .isArray().hasSize(2).containsExactly("#1", "#2");
+        assertThatJson(model).node("series")
+                .isArray().hasSize(3);
+    }
+
     @Test
     void shouldCreatePriorityChartWithZeroWarnings() {
         SeverityTrendChart chart = new SeverityTrendChart();

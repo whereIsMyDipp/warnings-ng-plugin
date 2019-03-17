@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.multimap.list.MutableListMultimap;
 import org.eclipse.collections.impl.multimap.list.FastListMultimap;
 
 import com.google.common.collect.Lists;
@@ -170,7 +171,7 @@ public abstract class SeriesBuilder {
      * @return the values as one series per day (average)
      */
     private SortedMap<LocalDate, Map<String, Integer>> createSeriesPerDay(
-            final FastListMultimap<LocalDate, Map<String, Integer>> multiSeriesPerDate) {
+            final MutableListMultimap<LocalDate, Map<String, Integer>> multiSeriesPerDate) {
         SortedMap<LocalDate, Map<String, Integer>> seriesPerDate = new TreeMap<>();
 
         for (LocalDate date : multiSeriesPerDate.keySet()) {
@@ -210,9 +211,9 @@ public abstract class SeriesBuilder {
      * @return the multi map with the values per day
      */
     @SuppressFBWarnings("WMI")
-    private FastListMultimap<LocalDate, Map<String, Integer>> createMultiSeriesPerDay(
+    private MutableListMultimap<LocalDate, Map<String, Integer>> createMultiSeriesPerDay(
             final Map<AnalysisBuild, Map<String, Integer>> valuesPerBuild) {
-        FastListMultimap<LocalDate, Map<String, Integer>> valuesPerDate = FastListMultimap.newMultimap();
+        MutableListMultimap<LocalDate, Map<String, Integer>> valuesPerDate = FastListMultimap.newMultimap();
         for (AnalysisBuild build : valuesPerBuild.keySet()) {
             LocalDate buildDate = Instant.ofEpochMilli(build.getTimeInMillis())
                     .atZone(ZoneId.systemDefault())
