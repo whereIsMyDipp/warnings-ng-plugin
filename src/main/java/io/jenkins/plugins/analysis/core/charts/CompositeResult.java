@@ -1,8 +1,6 @@
 package io.jenkins.plugins.analysis.core.charts;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -30,9 +28,9 @@ import io.jenkins.plugins.analysis.core.util.StaticAnalysisRun;
 public class CompositeResult implements Iterable<StaticAnalysisRun> {
     private final Collection<StaticAnalysisRun> results;
 
-    public CompositeResult(final List<Iterable<StaticAnalysisRun>> results) {
+    public CompositeResult(final List<Iterable<? extends StaticAnalysisRun>> elements) {
         SortedMap<AnalysisBuild, StaticAnalysisRun> resultsByBuild = new TreeMap<>();
-        for (Iterable<StaticAnalysisRun> toolResults : results) {
+        for (Iterable<? extends StaticAnalysisRun> toolResults : elements) {
             for (StaticAnalysisRun analysisRun : toolResults) {
                 resultsByBuild.merge(analysisRun.getBuild(), analysisRun, CompositeStaticAnalysisRun::new);
             }

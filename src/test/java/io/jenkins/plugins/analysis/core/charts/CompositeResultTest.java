@@ -1,6 +1,7 @@
 package io.jenkins.plugins.analysis.core.charts;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -15,7 +16,6 @@ import io.jenkins.plugins.analysis.core.util.AnalysisBuild;
 import io.jenkins.plugins.analysis.core.util.StaticAnalysisRun;
 
 import static io.jenkins.plugins.analysis.core.assertions.Assertions.*;
-import static java.util.Arrays.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -52,6 +52,11 @@ class CompositeResultTest {
         assertThat(second.getTotalSizeOf(Severity.WARNING_HIGH)).isEqualTo(14);
         assertThat(second.getTotalSizeOf(Severity.WARNING_NORMAL)).isEqualTo(18);
         assertThat(second.getTotalSizeOf(Severity.WARNING_LOW)).isEqualTo(22);
+    }
+
+    private List<Iterable<? extends StaticAnalysisRun>> asList(final List<StaticAnalysisRun> resultsCheckStyle,
+            final List<StaticAnalysisRun> resultsSpotBugs) {
+        return Arrays.asList(resultsCheckStyle, resultsSpotBugs);
     }
 
     private StaticAnalysisRun createResult(final int high, final int normal, final int low, final int number) {
