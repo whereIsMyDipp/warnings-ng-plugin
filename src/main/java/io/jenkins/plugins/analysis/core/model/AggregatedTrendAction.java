@@ -5,33 +5,37 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.annotation.CheckForNull;
 
 import net.sf.json.JSONObject;
 
 import org.kohsuke.stapler.bind.JavaScriptMethod;
-import hudson.model.Action;
+import hudson.model.InvisibleAction;
 import hudson.model.Job;
 import hudson.model.Run;
-import jenkins.model.Jenkins;
 
 import io.jenkins.plugins.analysis.core.charts.ChartModelConfiguration;
 import io.jenkins.plugins.analysis.core.charts.CompositeResult;
 import io.jenkins.plugins.analysis.core.charts.LinesChartModel;
-import io.jenkins.plugins.analysis.core.charts.SeverityTrendChart;
-import io.jenkins.plugins.analysis.core.util.StaticAnalysisRun;
+import io.jenkins.plugins.analysis.core.charts.ToolsTrendChart;
+import io.jenkins.plugins.analysis.core.util.AnalysisBuildResult;
 
 /**
- * FIXME: comment class.
+ * Project action that renders a combined trend chart of all tools in the job.
  *
  * @author Ullrich Hafner
  */
-public class AggregatedTrendAction implements Action {
+public class AggregatedTrendAction extends InvisibleAction {
     private static final int MIN_TOOLS = 2;
 
     private final Job<?, ?> owner;
 
-    public AggregatedTrendAction(final Job<?, ?> owner) {
+    /**
+     * Creates a new action.
+     *
+     * @param owner
+     *         job of this action
+     */
+    AggregatedTrendAction(final Job<?, ?> owner) {
         this.owner = owner;
     }
 
@@ -61,9 +65,9 @@ public class AggregatedTrendAction implements Action {
     }
 
     private LinesChartModel createChartModel() {
-        List<Iterable<? extends StaticAnalysisRun>> histories = new ArrayList<>(createBuildHistory());
+        List<Iterable<? extends AnalysisBuildResult>> histories = new ArrayList<>(createBuildHistory());
 
-        return new SeverityTrendChart().create(new CompositeResult(histories), new ChartModelConfiguration());
+        return new ToolsTrendChart().create(new CompositeResult(histories), new ChartModelConfiguration());
     }
 
     /**
@@ -81,23 +85,5 @@ public class AggregatedTrendAction implements Action {
 
         AnalysisHistory singleResult = history.iterator().next();
         return singleResult.hasMultipleResults();
-    }
-
-    @CheckForNull
-    @Override
-    public String getIconFileName() {
-        return Jenkins.RESOURCE_PATH + "/plugin/warnings-ng/icons/analysis-24x24.png";
-    }
-
-    @CheckForNull
-    @Override
-    public String getDisplayName() {
-        return "Hello World";
-    }
-
-    @CheckForNull
-    @Override
-    public String getUrlName() {
-        return "warnings-ng-aggregate";
     }
 }

@@ -1,91 +1,68 @@
 package io.jenkins.plugins.analysis.core.charts;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
-
-import org.eclipse.collections.api.list.ImmutableList;
 
 import edu.hm.hafner.analysis.Severity;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import hudson.model.Run;
-
 import io.jenkins.plugins.analysis.core.util.AnalysisBuild;
-import io.jenkins.plugins.analysis.core.util.QualityGateStatus;
-import io.jenkins.plugins.analysis.core.util.StaticAnalysisRun;
+import io.jenkins.plugins.analysis.core.util.AnalysisBuildResult;
 
 /**
- * FIXME: comment class.
+ * Combines the history results of several {@link AnalysisBuildResult static analysis results} into a single result
+ * history.
  *
  * @author Ullrich Hafner
  */
-public class CompositeResult implements Iterable<StaticAnalysisRun> {
-    private final Collection<StaticAnalysisRun> results;
+public class CompositeResult implements Iterable<AnalysisBuildResult> {
+    private final Collection<AnalysisBuildResult> results;
 
-    public CompositeResult(final List<Iterable<? extends StaticAnalysisRun>> elements) {
-        SortedMap<AnalysisBuild, StaticAnalysisRun> resultsByBuild = new TreeMap<>();
-        for (Iterable<? extends StaticAnalysisRun> toolResults : elements) {
-            for (StaticAnalysisRun analysisRun : toolResults) {
-                resultsByBuild.merge(analysisRun.getBuild(), analysisRun, CompositeStaticAnalysisRun::new);
+    /**
+     * Creates a new instance of {@link CompositeResult}.
+     *
+     * @param historyOfTools
+     *         the history of results for each tool
+     */
+    public CompositeResult(final List<Iterable<? extends AnalysisBuildResult>> historyOfTools) {
+        SortedMap<AnalysisBuild, AnalysisBuildResult> resultsByBuild = new TreeMap<>();
+        for (Iterable<? extends AnalysisBuildResult> toolHistory : historyOfTools) {
+            for (AnalysisBuildResult toolResult : toolHistory) {
+                resultsByBuild.merge(toolResult.getBuild(), toolResult, CompositeAnalysisBuildResult::new);
             }
         }
-        this.results = resultsByBuild.values();
+        results = resultsByBuild.values();
     }
 
     @NonNull
     @Override
-    public Iterator<StaticAnalysisRun> iterator() {
+    public Iterator<AnalysisBuildResult> iterator() {
         return results.iterator();
     }
 
-    static class CompositeStaticAnalysisRun implements StaticAnalysisRun {
-        private final StaticAnalysisRun first;
-        private final StaticAnalysisRun second;
+    /**
+     * Merges two {@link AnalysisBuildResult tool results} into a combined result.
+     */
+    static class CompositeAnalysisBuildResult implements AnalysisBuildResult {
+        private final AnalysisBuildResult first;
+        private final AnalysisBuildResult second;
 
-        public CompositeStaticAnalysisRun(final StaticAnalysisRun first, final StaticAnalysisRun second) {
+        CompositeAnalysisBuildResult(final AnalysisBuildResult first, final AnalysisBuildResult second) {
             this.first = first;
             this.second = second;
         }
 
         @Override
-        public Run<?, ?> getOwner() {
-            return null;
-        }
-
-        @Override
-        public ImmutableList<String> getErrorMessages() {
-            return null;
-        }
-
-        @Override
-        public ImmutableList<String> getInfoMessages() {
-            return null;
-        }
-
-        @Override
-        public int getSuccessfulSinceBuild() {
-            return 0;
-        }
-
-        @Override
-        public QualityGateStatus getQualityGateStatus() {
-            return null;
-        }
-
-        @Override
-        public Optional<Run<?, ?>> getReferenceBuild() {
-            return Optional.empty();
-        }
-
-        @Override
         public Map<String, Integer> getSizePerOrigin() {
-            return null;
+            Map<String, Integer> sizes = new HashMap<>(first.getSizePerOrigin());
+            sizes.putAll(second.getSizePerOrigin());
+            return sizes;
         }
 
         @Override
@@ -94,18 +71,13 @@ public class CompositeResult implements Iterable<StaticAnalysisRun> {
         }
 
         @Override
-        public int getNoIssuesSinceBuild() {
-            return 0;
-        }
-
-        @Override
         public int getFixedSize() {
-            return 0;
+            return first.getFixedSize() + second.getFixedSize();
         }
 
         @Override
         public int getTotalSize() {
-            return 0;
+            return first.getTotalSize() + second.getTotalSize();
         }
 
         @Override
@@ -115,12 +87,12 @@ public class CompositeResult implements Iterable<StaticAnalysisRun> {
 
         @Override
         public int getNewSize() {
-            return 0;
+            return first.getNewSize() + second.getNewSize();
         }
 
         @Override
         public int getNewSizeOf(final Severity severity) {
-            return 0;
+            return first.getNewSizeOf(severity) + second.getNewSizeOf(severity);
         }
 
         @Override
@@ -131,7 +103,7 @@ public class CompositeResult implements Iterable<StaticAnalysisRun> {
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            CompositeStaticAnalysisRun that = (CompositeStaticAnalysisRun) o;
+            CompositeAnalysisBuildResult that = (CompositeAnalysisBuildResult) o;
             return first.equals(that.first) && second.equals(that.second);
         }
 
